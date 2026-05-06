@@ -11,15 +11,22 @@
 #include <cmath>
 #include <iomanip>
 #include <chrono>
-#include <winsock2.h>
-#include <iphlpapi.h>
 #include <future>
 #include <thread>
 #include <atomic>
 #include <mutex>
 
-#pragma comment(lib, "iphlpapi.lib")
-#pragma comment(lib, "ws2_32.lib")
+#ifdef _WIN32
+    #include <winsock2.h>
+    #include <iphlpapi.h>
+    #pragma comment(lib, "iphlpapi.lib")
+    #pragma comment(lib, "ws2_32.lib")
+    #define POPEN _popen
+    #define PCLOSE _pclose
+#else
+    #define POPEN popen
+    #define PCLOSE pclose
+#endif
 
 std::mutex console_mutex;
 
@@ -36,13 +43,17 @@ struct SiteMetrics {
 class WSASession {
 public:
     WSASession() {
+#ifdef _WIN32
         WSADATA wsaData;
         if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
             throw std::runtime_error("WSAStartup failed");
         }
+#endif
     }
     ~WSASession() {
+#ifdef _WIN32
         WSACleanup();
+#endif
     }
 };
 
@@ -69,9 +80,11 @@ bool isValidDomain(const std::string& domain) {
 std::string exec(const char* cmd) {
     std::array<char, 128> buffer;
     std::string result;
-    std::unique_ptr<FILE, decltype(&_pclose)> pipe(_popen(cmd, "r"), _pclose);
+    
+    std::unique_ptr<FILE, int (*)(FILE*)> pipe(POPEN(cmd, "r"), PCLOSE);
+    
     if (!pipe) {
-        throw std::runtime_error("_popen() failed!");
+        throw std::runtime_error("popen() failed!");
     }
     while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
         result += buffer.data();
@@ -84,9 +97,9 @@ void parsePing(const std::string& output, SiteMetrics& metrics) {
     
     std::regex time_regex;
     if (is_english) {
-        time_regex = std::regex("time[=<]([0-9]+)ms");
+        time_regex = std::regex("time[=<]([0-9]+(?:\\.[0-9]+)?)\\s*ms");
     } else {
-        time_regex = std::regex("tempo[=<]([0-9]+)ms");
+        time_regex = std::regex("tempo[=<]([0-9]+(?:\\.[0-9]+)?)\\s*ms");
     }
 
     std::vector<double> latencies;
@@ -126,7 +139,7 @@ void parsePing(const std::string& output, SiteMetrics& metrics) {
         metrics.avg_lat = sum / latencies.size();
     }
 
-    std::regex loss_regex("\\(([0-9]+)%");
+    std::regex loss_regex("([0-9]+)%");
     std::smatch loss_match;
     if (std::regex_search(output, loss_match, loss_regex)) {
         metrics.packet_loss = std::stoi(loss_match[1].str());
@@ -186,7 +199,12 @@ SiteMetrics processSite(const std::string& domain) {
         return metrics;
     }
 
+#ifdef _WIN32
     std::string ping_cmd = "ping " + domain + " -n 20";
+#else
+    std::string ping_cmd = "ping -c 20 " + domain;
+#endif
+
     std::string ping_out = exec(ping_cmd.c_str());
     parsePing(ping_out, metrics);
 

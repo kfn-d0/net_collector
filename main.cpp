@@ -230,7 +230,13 @@ int main() {
             "instagram.com",
             "steampowered.com",
             "roblox.com",
-            "www.fortnite.com"
+            "www.fortnite.com",
+            "open.spotify.com",
+            "www.binance.com",
+            "github.com",
+            "www.linkedin.com",
+            "www.coursera.org",
+            "pt.aliexpress.com"
         };
 
         std::vector<SiteMetrics> results;

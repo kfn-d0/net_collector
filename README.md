@@ -6,12 +6,13 @@ A C++ tool designed to collect basic network metrics. This tool is specifically 
 
 ## Features
 
-- **Multi-Site Monitoring**: Automatically tests connectivity to 15 platforms in batches of 5 for speed and efficiency:
+- **Multi-Site Monitoring**: Automatically tests connectivity to 21 platforms in batches of 5 for speed and efficiency:
   - **Search & Infrastructure**: Google, X (Twitter), Speed.cloudflare.com
   - **Social & Messaging**: TikTok, WhatsApp, Instagram
   - **Streaming & Media**: YouTube, Fast.com (Netflix), Globo.com
   - **E-commerce & AI**: Mercado Livre, UOL, ChatGPT
   - **Gaming**: Steam, Roblox, Fortnite
+  - **Music, Finance, Development, Education & Retail**: Spotify, Binance, GitHub, LinkedIn, Coursera, AliExpress
 - **Robust Metrics Calculation**:
   - **Manual Latency Sampling**: Calculates Min, Average, and Maximum RTT directly from captured samples to ensure accuracy across different system languages.
   - **Jitter**: High-precision calculation of latency variation between consecutive pings.
